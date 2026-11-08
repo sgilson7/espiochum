@@ -283,3 +283,10 @@ pub const SEARCH_SPREAD: i32 = 35;
 pub const HELI_WAIT: i32 = int(75);
 /// It comes into view this long before it lands.
 pub const HELI_APPROACH: i32 = int(12);
+
+/// The skinned pass draws a person or the mule only within this distance of
+/// the camera, and not more than `ACTOR_BEHIND` behind its eye: a software
+/// renderer cannot draw the whole garrison every frame, and nobody can see
+/// a face at 70 m.
+pub const ACTOR_FAR: i32 = int(70);
+pub const ACTOR_BEHIND: i32 = int(3);

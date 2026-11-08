@@ -2860,7 +2860,11 @@ impl Game {
             Prisoner::Gone => {}
         }
         let mut actor_vals = Vec::with_capacity(acts.len() * ACTOR_VALUES);
-        for a in &acts {
+        let (eye, fwd) = (self.cam.eye, self.cam.fwd);
+        for a in acts
+            .iter()
+            .filter(|a| Table::in_view(a.at, eye, fwd, ACTOR_FAR, ACTOR_BEHIND))
+        {
             t.record(a, &mut actor_vals);
         }
         if !r.case_taken {

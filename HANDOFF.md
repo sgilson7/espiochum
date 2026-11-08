@@ -1,5 +1,44 @@
 # Handoff
 
+Espiochum, 2026-11-07. Gate Crasher's first mission rebuilt in the new realistic style. Gate Crasher's own handoff follows below, unchanged, as the history of the rules.
+
+## What this is
+
+A third-person stealth game in the browser: Caged Bird, Gate Crasher's first mission, with Big Chum, the soldiers, Corporal Grace and the Memphis Mule as skinned, animated meshes, the outpost under weathered materials and a low sun, and the same rules. Live at https://sgilson7.github.io/espiochum/ (repository sgilson7/espiochum; a push to `main` checks and deploys).
+
+## What passed
+
+`./scripts/check.sh` locally, 2026-11-07: format, clippy, 112 + 11 core tests, the release WebAssembly build, the import audit, the clip check (1,628 frames across 35 clips, nothing clips) and its two planted defects (both caught), and the browser check in Chromium, Firefox and WebKit: BUILDER CHECK PASSED (1 min 41 s). CI runs the same file in Chromium before each deploy.
+
+## How the art reaches the game
+
+1. Style Lab (`../style-lab/tools/mesh/`) builds the cast: `make.sh` (the veteran, the soldier model), `make_gc.sh` steps for Big Chum, the mule and the cast scene, `grace.json` with `build.py` and `skin.py` for Corporal Grace, then `cast.py` with `grace.blend:grace`.
+2. `game_clips.py` authors the 35 game clips on `notes/gc/cast.blend` into `game.blend`: in place, gaits one stride long, paired clips at the core's offsets (held 0.55 m ahead; carried at the carrier's origin; on the mule at the mule's origin).
+3. `bake_game.py notes/gc ../espiochum` writes `web/mesh/`, `data/mesh/` and `data/clips.json`.
+4. Here: `python3 scripts/check_clips.py`, then `./scripts/check.sh`.
+
+## Rules that hold it up
+
+- The core picks every clip and frame (`crates/core/src/actors.rs`); the page draws the records (`web/skin.js`). Tests in `actors.rs` pin the stride rule, the rows, the loop and hold rules, and that the shipped table has every clip the game asks for.
+- `scripts/check_clips.py` and `tests/clip_defect.py` (step 6 of `check.sh`): a clip that clips fails the build.
+- `data/missions.json` `offered`: the menu lists offered missions only.
+
+## Open for the person
+
+- E6: the uniform no longer recolours Big Chum's suit (the rule still applies).
+- E7: the mule has no mane or tail hair in game, and his blanket is missing.
+- E8: faces hold still in game; the face shapes are in the Blender files only.
+- The other three missions and the Deterrence Unit are in the rules but off the menu.
+
+## What will bite within the hour
+
+- Rebaking changes `data/clips.json` rows: the core compiles the table in, so rebuild after every bake.
+- `skin.js` must leave the GL state as it found it (E5).
+
+---
+
+# Handoff
+
 12 October 2026. Where Gatecrasher stands.
 
 ## What exists

@@ -113,6 +113,13 @@ impl Table {
         ticks.max(0) * (ONE / TICKS_PER_FRAME)
     }
 
+    /// Whether an actor at `at` is drawn from a camera at `eye` looking along
+    /// unit `fwd`: within `far`, and not more than `behind` behind the eye.
+    pub fn in_view(at: V3, eye: V3, fwd: V3, far: i32, behind: i32) -> bool {
+        let d = at.sub(eye);
+        d.len() <= far && d.dot(fwd) >= -behind
+    }
+
     /// The record the page reads for one actor.
     pub fn record(&self, a: &Actor, out: &mut Vec<i32>) {
         let c = &self.models[a.model][a.clip];
@@ -195,6 +202,27 @@ mod tests {
             &[ONE, 0, 0, 0, ONE, 0, 0, 0, ONE, int(3), int(1), int(-2)]
         );
         assert_eq!(out[16], ONE, "armed");
+    }
+
+    #[test]
+    fn only_actors_near_and_ahead_of_the_camera_are_drawn() {
+        let (eye, fwd) = (v3(0, 0, 0), v3(0, 0, -ONE));
+        assert!(
+            Table::in_view(v3(0, 0, int(-30)), eye, fwd, int(70), int(3)),
+            "30 m ahead"
+        );
+        assert!(
+            !Table::in_view(v3(0, 0, int(-80)), eye, fwd, int(70), int(3)),
+            "80 m ahead is too far"
+        );
+        assert!(
+            Table::in_view(v3(0, 0, int(2)), eye, fwd, int(70), int(3)),
+            "2 m behind the eye still shows"
+        );
+        assert!(
+            !Table::in_view(v3(0, 0, int(10)), eye, fwd, int(70), int(3)),
+            "10 m behind is not drawn"
+        );
     }
 
     #[test]
