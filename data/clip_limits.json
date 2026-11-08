@@ -1,0 +1,17 @@
+{
+ "_about": "How deep one capsule may sink into another before scripts/check_clips.py fails, in metres. Capsules are rough (a bone and a radius), so a little overlap at soft contacts is allowed. contacts lists, per clip, bone prefixes that are meant to touch there (an arm round a neck); they are skipped. ground_exempt lists none: lying bodies rest on the ground and must not sink into it either.",
+ "ground": 0.03,
+ "self": 0.035,
+ "pair": 0.04,
+ "contacts": {
+  "chum__hold": [[["upperarm01.R", "lowerarm01.R", "lowerarm02.R", "wrist.R"], ["neck", "head", "spine01", "clavicle"]],
+                 [["upperarm01.L", "lowerarm01.L", "lowerarm02.L", "wrist.L"], ["shoulder", "clavicle", "upperarm01.L", "spine01"]]],
+  "chum__carry_walk": [[["clavicle.R", "shoulder01.R", "upperarm01.R", "upperarm02.R", "lowerarm01.R", "lowerarm02.R", "wrist.R"], ["spine", "pelvis", "upperleg", "root"]]],
+  "chum__carry_idle": [[["clavicle.R", "shoulder01.R", "upperarm01.R", "upperarm02.R", "lowerarm01.R", "lowerarm02.R", "wrist.R"], ["spine", "pelvis", "upperleg", "root"]]],
+  "chum__ride": [[["upperleg", "lowerleg", "pelvis", "root"], ["torso"]]],
+  "mule__walk": [[["spine", "pelvis", "root"], ["torso"]]],
+  "mule__trot": [[["spine", "pelvis", "root"], ["torso"]]],
+  "mule__idle": [[["spine", "pelvis", "root"], ["torso"]]]
+ },
+ "ground_exempt": []
+}

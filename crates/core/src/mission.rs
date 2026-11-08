@@ -59,6 +59,8 @@ pub struct Mission {
     pub lz: V3,
     pub target_place: Option<V3>,
     pub seed: u64,
+    /// listed on the mission menu (Espiochum offers the first mission only)
+    pub offered: bool,
     pub intel: Vec<Intel>,
     pub soldiers: Vec<SoldierSpec>,
     /// where the charges go (a sabotage mission)
@@ -85,10 +87,16 @@ struct RawMission {
     #[serde(default)]
     target_place: Option<String>,
     seed: u64,
+    #[serde(default = "offered_by_default")]
+    offered: bool,
     intel: Vec<RawIntel>,
     soldiers: Vec<RawSoldier>,
     #[serde(default)]
     charges: Vec<String>,
+}
+
+fn offered_by_default() -> bool {
+    true
 }
 
 #[derive(Deserialize)]
@@ -227,6 +235,7 @@ pub fn parse_missions(json: &str, world: &World) -> Result<Vec<Mission>, String>
             start_yaw: deg(m.start_facing),
             target_place,
             seed: m.seed,
+            offered: m.offered,
             intel,
             soldiers,
             charges,

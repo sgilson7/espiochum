@@ -1,0 +1,236 @@
+{
+ "_about": "Every clip the page can draw, by model, in the order the core numbers them. Frames at 30 a second; a loop's last frame joins its first. Written by the bake; the core reads it to choose a clip and a frame.",
+ "fps": 30,
+ "models": [
+  {
+   "model": "chum",
+   "clips": [
+    {
+     "name": "idle",
+     "frames": 60,
+     "loop": true,
+     "row": 0
+    },
+    {
+     "name": "run",
+     "frames": 22,
+     "loop": true,
+     "row": 60
+    },
+    {
+     "name": "sprint",
+     "frames": 21,
+     "loop": true,
+     "row": 82
+    },
+    {
+     "name": "crouch_walk",
+     "frames": 27,
+     "loop": true,
+     "row": 103
+    },
+    {
+     "name": "crouch_idle",
+     "frames": 60,
+     "loop": true,
+     "row": 130
+    },
+    {
+     "name": "prone_idle",
+     "frames": 60,
+     "loop": true,
+     "row": 190
+    },
+    {
+     "name": "crawl",
+     "frames": 40,
+     "loop": true,
+     "row": 250
+    },
+    {
+     "name": "carry_walk",
+     "frames": 26,
+     "loop": true,
+     "row": 290
+    },
+    {
+     "name": "carry_idle",
+     "frames": 60,
+     "loop": true,
+     "row": 316
+    },
+    {
+     "name": "hold",
+     "frames": 60,
+     "loop": true,
+     "row": 376
+    },
+    {
+     "name": "hang",
+     "frames": 60,
+     "loop": true,
+     "row": 436
+    },
+    {
+     "name": "ride",
+     "frames": 60,
+     "loop": true,
+     "row": 496
+    },
+    {
+     "name": "dive",
+     "frames": 20,
+     "loop": false,
+     "row": 556
+    },
+    {
+     "name": "aim",
+     "frames": 30,
+     "loop": true,
+     "row": 576
+    },
+    {
+     "name": "crouch_aim",
+     "frames": 30,
+     "loop": true,
+     "row": 606
+    }
+   ]
+  },
+  {
+   "model": "soldier",
+   "clips": [
+    {
+     "name": "idle",
+     "frames": 60,
+     "loop": true,
+     "row": 0
+    },
+    {
+     "name": "walk",
+     "frames": 31,
+     "loop": true,
+     "row": 60
+    },
+    {
+     "name": "run",
+     "frames": 22,
+     "loop": true,
+     "row": 91
+    },
+    {
+     "name": "aim",
+     "frames": 30,
+     "loop": true,
+     "row": 113
+    },
+    {
+     "name": "held",
+     "frames": 60,
+     "loop": true,
+     "row": 143
+    },
+    {
+     "name": "handsup",
+     "frames": 60,
+     "loop": true,
+     "row": 203
+    },
+    {
+     "name": "crouch_idle",
+     "frames": 60,
+     "loop": true,
+     "row": 263
+    },
+    {
+     "name": "lying",
+     "frames": 60,
+     "loop": true,
+     "row": 323
+    },
+    {
+     "name": "bound",
+     "frames": 60,
+     "loop": true,
+     "row": 383
+    },
+    {
+     "name": "draped",
+     "frames": 60,
+     "loop": true,
+     "row": 443
+    },
+    {
+     "name": "on_mule",
+     "frames": 60,
+     "loop": true,
+     "row": 503
+    },
+    {
+     "name": "kick",
+     "frames": 24,
+     "loop": true,
+     "row": 563
+    }
+   ]
+  },
+  {
+   "model": "grace",
+   "clips": [
+    {
+     "name": "caged",
+     "frames": 60,
+     "loop": true,
+     "row": 0
+    },
+    {
+     "name": "lying",
+     "frames": 60,
+     "loop": true,
+     "row": 60
+    },
+    {
+     "name": "draped",
+     "frames": 60,
+     "loop": true,
+     "row": 120
+    },
+    {
+     "name": "on_mule",
+     "frames": 60,
+     "loop": true,
+     "row": 180
+    }
+   ]
+  },
+  {
+   "model": "mule",
+   "clips": [
+    {
+     "name": "idle",
+     "frames": 90,
+     "loop": true,
+     "row": 0
+    },
+    {
+     "name": "walk",
+     "frames": 32,
+     "loop": true,
+     "row": 90
+    },
+    {
+     "name": "trot",
+     "frames": 23,
+     "loop": true,
+     "row": 122
+    },
+    {
+     "name": "charge",
+     "frames": 20,
+     "loop": true,
+     "row": 145
+    }
+   ]
+  }
+ ]
+}

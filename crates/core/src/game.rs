@@ -6,9 +6,10 @@
 //! a sixtieth of a second (a fifth of that in reflex mode). After each frame
 //! the page reads what to draw and the HUD as JSON.
 
+use crate::actors::{Actor, Table, CHUM, GRACE, MULE, SOLDIER, VALUES as ACTOR_VALUES};
 use crate::balance::*;
-use crate::content::{Palette, Rgb};
-use crate::draw::{self, Hat, Look, MuleLook, Pose};
+use crate::content::Palette;
+use crate::draw::{self, Hat, Look};
 use crate::fx::{self, deg, int, ratio, ONE};
 use crate::geom::{facing, right_of, v3, V3};
 use crate::mesh::{self, Mesh};
@@ -19,7 +20,7 @@ use crate::portal::{self, Portal};
 use crate::render::{self, Batch, Camera, LAYER_INKED};
 use crate::rng::Rng;
 use crate::soldier::{Body, Ctx, Event, Life, Mind, Phase, Soldier, Target};
-use crate::world::{self, World, STYLE_CAMO, STYLE_CLOAK, STYLE_GLOW};
+use crate::world::{self, World, STYLE_GLOW};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 
@@ -251,6 +252,8 @@ pub struct Game {
     scenery_runs: Vec<(usize, u32, u32, u32)>,
     scenery_version: u32,
     dynamic_vals: Vec<i32>,
+    actor_table: Table,
+    actor_vals: Vec<i32>,
     dynamic_runs: Vec<(usize, u32, u32, u32)>,
     cam: Camera,
     /// the camera looking out of the other portal, and its clip plane, for
@@ -309,6 +312,8 @@ impl Game {
             scenery_runs: Vec::new(),
             scenery_version: 0,
             dynamic_vals: Vec::new(),
+            actor_table: Table::load(),
+            actor_vals: Vec::new(),
             dynamic_runs: Vec::new(),
             cam: Camera {
                 eye: v3(0, int(60), int(120)),
@@ -2611,10 +2616,6 @@ fn world_tick(
 
 // --- drawing ------------------------------------------------------------------------------------
 
-fn rgb_hex(s: &str) -> Rgb {
-    crate::content::hex(s).unwrap_or([ONE, 0, ONE])
-}
-
 impl Game {
     fn soldier_look(&self, s: &Soldier) -> Look {
         let p = &self.palette;
@@ -2675,6 +2676,7 @@ impl Game {
                 up: V3::UP,
             };
             self.through = [None, None];
+            self.actor_vals.clear();
             let (v, runs) = b.finish();
             self.dynamic_vals = v;
             self.dynamic_runs = runs;
@@ -2684,96 +2686,112 @@ impl Game {
         self.cam = camera(r);
         self.through = through_cameras(r, &self.cam);
         // the operative
-        let u = &self.uniforms[r.uniform.min(self.uniforms.len() - 1)];
-        let me = Look {
-            body: rgb_hex(&u.base),
-            dark: rgb_hex(&u.blotch),
-            skin: p.get("operative_skin"),
-            boots: p.get("boots"),
-            hat: Hat::Hair(p.get("hair")),
-            goggles: None,
-            style: if r.cloak { STYLE_CLOAK } else { STYLE_CAMO },
-        };
+        // the people and the mule: actor records for the skinned pass
+        // (actors.rs); the clip and frame come from the state kept here
+        let t = &self.actor_table;
+        let clock = Table::by_ticks(r.tick as i32);
+        let mut acts: Vec<Actor> = Vec::new();
         if r.p.locker.is_none() {
-            let moving = r.p.gait != Gait::Still;
-            let walk = r.p.walk_phase;
             if r.p.boxed {
                 draw::cardboard(&mut b, r.p.pos, r.p.yaw, p.get("box"));
             } else {
-                let pose = match r.p.stance {
-                    _ if r.riding => Pose::Ride { aim: r.aiming },
-                    _ if r
-                        .p
-                        .hang
-                        .is_some_and(|h| matches!(h.stage, player::Ledge::Up { .. })) =>
-                    {
-                        Pose::Crouch {
-                            walk,
-                            moving: false,
-                            aim: false,
-                        }
+                let moving = r.p.gait != Gait::Still;
+                let phase = r.p.walk_phase;
+                let (name, frame): (&str, i32) = if r.riding {
+                    ("ride", clock)
+                } else if r
+                    .p
+                    .hang
+                    .is_some_and(|h| matches!(h.stage, player::Ledge::Up { .. }))
+                {
+                    ("crouch_idle", clock)
+                } else if r.p.hanging() {
+                    ("hang", clock)
+                } else if r.p.dive > 0 {
+                    let n = t.frames(CHUM, t.clip(CHUM, "dive"));
+                    (
+                        "dive",
+                        fx::mul(fx::div(DIVE_TIME - r.p.dive, DIVE_TIME), int(n - 1)),
+                    )
+                } else if r.hold.is_some() {
+                    ("hold", clock)
+                } else if r.carry.is_some() {
+                    if moving {
+                        ("carry_walk", t.by_phase(CHUM, "carry_walk", phase))
+                    } else {
+                        ("carry_idle", clock)
                     }
-                    _ if r.p.hanging() => Pose::Hang { walk },
-                    _ if r.p.dive > 0 => Pose::Dive {
-                        t: DIVE_TIME - r.p.dive,
-                    },
-                    Stance::Stand => Pose::Upright {
-                        walk,
-                        moving,
-                        aim: r.aiming,
-                    },
-                    Stance::Crouch => Pose::Crouch {
-                        walk,
-                        moving,
-                        aim: r.aiming,
-                    },
-                    Stance::Prone => Pose::Prone { walk },
+                } else {
+                    match r.p.stance {
+                        Stance::Stand if r.aiming => ("aim", clock),
+                        Stance::Stand if moving => {
+                            let g = if r.p.gait == Gait::Sprint { "sprint" } else { "run" };
+                            (g, t.by_phase(CHUM, g, phase))
+                        }
+                        Stance::Stand => ("idle", clock),
+                        Stance::Crouch if r.aiming => ("crouch_aim", clock),
+                        Stance::Crouch if moving => ("crouch_walk", t.by_phase(CHUM, "crouch_walk", phase)),
+                        Stance::Crouch => ("crouch_idle", clock),
+                        Stance::Prone if moving => ("crawl", t.by_phase(CHUM, "crawl", phase)),
+                        Stance::Prone => ("prone_idle", clock),
+                    }
                 };
-                draw::person(&mut b, r.p.pos, r.p.yaw, pose, &me);
+                let (at, yaw) = if r.riding {
+                    (r.mule.pos, r.mule.yaw)
+                } else {
+                    (r.p.pos, r.p.yaw)
+                };
+                acts.push(t.actor(CHUM, name, frame, at, yaw, false));
             }
         }
         // soldiers
         let near = |at: V3| v3(at.x - r.p.pos.x, 0, at.z - r.p.pos.z).len() < int(75);
-        for s in &r.soldiers {
+        for (i, s) in r.soldiers.iter().enumerate() {
             if s.life == Life::Gone || s.locker.is_some() {
-                continue;
-            }
-            let look = self.soldier_look(s);
-            if s.carried || s.on_mule {
-                draw::draped(&mut b, s.pos, if s.on_mule { r.mule.yaw } else { r.p.yaw }, &look);
                 continue;
             }
             if let Some(at) = s.rifle_down {
                 draw::rifle(&mut b, at, s.yaw);
             }
-            let pose = if s.held {
-                Pose::Held
+            // each soldier's idle runs a little out of step with the others
+            let own = clock + int(7 * i as i32);
+            let armed = s.rifle_down.is_none();
+            let (name, frame, at, yaw, rifle) = if s.carried {
+                ("draped", own, r.p.pos, r.p.yaw, false)
+            } else if s.on_mule {
+                ("on_mule", own, r.mule.pos, r.mule.yaw, false)
+            } else if s.held {
+                ("held", own, s.pos, s.yaw, false)
             } else if s.held_up() && s.free() {
-                Pose::HandsUp
-            } else if let (Mind::Help { buddy, t }, true) =
+                ("handsup", own, s.pos, s.yaw, false)
+            } else if let (Mind::Help { buddy, .. }, true) =
                 (s.mind, s.free() && s.life == Life::Awake && !s.moving)
             {
                 if r.soldiers[buddy].life == Life::Bound {
-                    Pose::Crouch {
-                        walk: 0,
-                        moving: false,
-                        aim: false,
-                    }
+                    ("crouch_idle", own, s.pos, s.yaw, armed)
                 } else {
-                    Pose::Kick { t }
+                    ("kick", own, s.pos, s.yaw, armed)
                 }
             } else if s.life == Life::Bound {
-                Pose::Bound
+                ("bound", own, s.pos, s.yaw, false)
             } else if s.down() {
-                Pose::Lying
+                ("lying", own, s.pos, s.yaw, false)
+            } else if s.moving {
+                let g = if matches!(s.mind, Mind::Patrol) {
+                    "walk"
+                } else {
+                    "run"
+                };
+                (g, t.by_phase(SOLDIER, g, s.walk_phase), s.pos, s.yaw, armed)
+            } else if matches!(s.mind, Mind::Combat) && armed {
+                ("aim", own, s.pos, s.yaw, true)
             } else {
-                Pose::Upright {
-                    walk: s.walk_phase,
-                    moving: s.moving,
-                    aim: matches!(s.mind, Mind::Combat) && s.rifle_down.is_none(),
-                }
+                ("idle", own, s.pos, s.yaw, armed)
             };
-            draw::person(&mut b, s.pos, s.yaw, pose, &look);
+            acts.push(t.actor(SOLDIER, name, frame, at, yaw, rifle));
+            if s.carried || s.on_mule {
+                continue;
+            }
             if s.free() && s.life == Life::Awake && (near(s.pos) || s.marked) {
                 let rgb = match s.mind {
                     Mind::Combat => p.get("cone_combat"),
@@ -2813,22 +2831,18 @@ impl Game {
             }
         }
         // the mule
-        let ml = MuleLook {
-            coat: p.get("mule"),
-            light: p.get("mule_light"),
-            dark: p.get("mule_dark"),
-            bandana: p.get("bandana"),
-            saddle: p.get("saddle"),
+        let mule_clip = match r.mule.mode {
+            MuleMode::Charge(_) => "charge",
+            _ if !r.mule.moving => "idle",
+            MuleMode::Come => "trot",
+            _ => "walk",
         };
-        draw::mule(
-            &mut b,
-            r.mule.pos,
-            r.mule.yaw,
-            r.mule.walk,
-            r.mule.moving,
-            matches!(r.mule.mode, MuleMode::Charge(_)),
-            &ml,
-        );
+        let mule_frame = if r.mule.moving {
+            t.by_phase(MULE, mule_clip, r.mule.walk)
+        } else {
+            clock
+        };
+        acts.push(t.actor(MULE, mule_clip, mule_frame, r.mule.pos, r.mule.yaw, false));
         // portals
         for (k, pt) in r.portals.iter().enumerate() {
             if let Some(pt) = pt {
@@ -2836,24 +2850,18 @@ impl Game {
                 draw::portal(&mut b, k, pt.at, pt.n, rgb, PORTAL_W, PORTAL_H, ONE);
             }
         }
-        // the prisoner and the case
+        // the prisoner (his look still dresses the box figure on a balloon)
         let cl = self.commando_look();
         match r.prisoner {
-            Prisoner::Caged => draw::person(
-                &mut b,
-                r.prisoner_at,
-                deg(90),
-                Pose::Crouch {
-                    walk: 0,
-                    moving: false,
-                    aim: false,
-                },
-                &cl,
-            ),
-            Prisoner::Free => draw::person(&mut b, r.prisoner_at, deg(90), Pose::Lying, &cl),
-            Prisoner::Carried => draw::draped(&mut b, r.prisoner_at, r.p.yaw, &cl),
-            Prisoner::OnMule => draw::draped(&mut b, r.prisoner_at, r.mule.yaw, &cl),
+            Prisoner::Caged => acts.push(t.actor(GRACE, "caged", clock, r.prisoner_at, deg(90), false)),
+            Prisoner::Free => acts.push(t.actor(GRACE, "lying", clock, r.prisoner_at, deg(90), false)),
+            Prisoner::Carried => acts.push(t.actor(GRACE, "draped", clock, r.p.pos, r.p.yaw, false)),
+            Prisoner::OnMule => acts.push(t.actor(GRACE, "on_mule", clock, r.mule.pos, r.mule.yaw, false)),
             Prisoner::Gone => {}
+        }
+        let mut actor_vals = Vec::with_capacity(acts.len() * ACTOR_VALUES);
+        for a in &acts {
+            t.record(a, &mut actor_vals);
         }
         if !r.case_taken {
             if let Some(c) = m.target_place {
@@ -2929,6 +2937,7 @@ impl Game {
         }
         let (v, runs) = b.finish();
         self.dynamic_vals = v;
+        self.actor_vals = actor_vals;
         self.dynamic_runs = runs;
     }
 
@@ -2944,6 +2953,11 @@ impl Game {
 
     pub fn dynamic(&self) -> Vec<i32> {
         self.dynamic_vals.clone()
+    }
+
+    /// One record per person and the mule for the skinned pass (actors.rs).
+    pub fn actors(&self) -> Vec<i32> {
+        self.actor_vals.clone()
     }
 
     pub fn draws(&self) -> Vec<u32> {
@@ -2981,7 +2995,8 @@ impl Game {
         }
         out.extend_from_slice(&[int(120), int(380)]);
         // the ink line: least width, growth per metre, most width
-        out.extend_from_slice(&[ratio(15, 1000), ratio(15, 10000), ratio(5, 100)]);
+        // no ink line in this style: zero width
+        out.extend_from_slice(&[0, 0, 0]);
         out
     }
 
@@ -3252,6 +3267,7 @@ impl Game {
         let missions: Vec<Value> = self
             .missions
             .iter()
+            .filter(|m| m.offered)
             .map(|m| {
                 let rec = self.records.get(&m.id);
                 json!({
@@ -3336,6 +3352,11 @@ pub fn numbers() -> String {
         "view_values": 16,
         "mesh_count": render::MESH_COUNT,
         "uniforms": [["uLightDir", 3], ["uSky", 3], ["uFog", 3], ["uLight", 3], ["uInk", 3], ["uFogRange", 2], ["uInkSize", 3]],
+        "actor": {
+            "values": crate::actors::VALUES, "model": 0, "row": 1, "next": 2, "blend": 3,
+            "matrix": [4, 16], "armed": 16,
+            "models": ["chum", "soldier", "grace", "mule"]
+        },
         "actions": {
             "forward": FORWARD, "back": BACK, "left": LEFT, "right": RIGHT, "sprint": SPRINT,
             "crouch": CROUCH, "prone": PRONE, "jump": JUMP, "use": USE, "cqc": CQC, "fire": FIRE,
@@ -3356,6 +3377,24 @@ pub fn noise_samples(n: u32, seed: u32) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_menu_lists_only_the_missions_on_offer() {
+        let g = start(0);
+        let menu: Value = serde_json::from_str(&g.menu_json()).unwrap();
+        let ids: Vec<&str> = menu["missions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| m["id"].as_str().unwrap())
+            .collect();
+        assert_eq!(ids, vec!["caged_bird"], "Espiochum offers the first mission only");
+        assert_eq!(
+            g.missions.len(),
+            4,
+            "the other missions stay in the rules for later rounds"
+        );
+    }
     use crate::geom::yaw_pitch_of;
     use crate::world::MECH_DECK_DM;
 

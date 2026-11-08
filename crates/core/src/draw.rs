@@ -903,7 +903,7 @@ pub fn scenery(world: &World, p: &Palette) -> Batch {
             let h = ratio(rng.range(55, 95), 100);
             let a = Affine::translate(v3(x, h / 2, z))
                 .then(&Affine::rot_y(rng.range(0, fx::TURN)))
-                .then(&Affine::scale(v3(ratio(35, 100), h, ratio(10, 100))));
+                .then(&Affine::scale(v3(ratio(12, 100), h, ratio(3, 100))));
             b.push(
                 LAYER_PLAIN,
                 Mesh::Cone,

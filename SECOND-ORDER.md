@@ -46,3 +46,19 @@
 | T3 | worklist | Sam: play the portal windows on a real GPU. They were seen only in headless Chromium's software renderer; drawing the scene three times may cost frames on a weak laptop. |
 | T1 | worklist | Every feel number is the agent's guess until Sam plays it (`balance.rs`): sight ranges, how fast awareness rises, enemy aim time and accuracy, noise radii, speeds. |
 | T2 | worklist | Sam: whether the name Gatecrasher stays. |
+
+## Espiochum (2026-11-07)
+
+Rows for the rebuild of mission 1. Gate Crasher's rows above are its history and still describe the rules.
+
+| # | Kind | Assumed or found | What is true | What changed | Status |
+| --- | --- | --- | --- | --- | --- |
+| E1 | divergence | "Rebuild the first mission from scratch." | The rules are Gate Crasher's, ported whole at e5e12de (Builder rule 20: port with its tests, do not rewrite); what is rebuilt is the cast, its animation, the world's look and the menu art. | BRIEF.md, PLAN.md | done |
+| E2 | divergence | Only mission 1 ships. | The other three missions stay in `data/missions.json` with `offered: false`, so the core's tests for them still run; the menu lists offered missions only (test `the_menu_lists_only_the_missions_on_offer`, broken once: it listed all four). | mission.rs, game.rs | done |
+| E3 | finding | A clip check on bone capsules would pass clean clips. | It failed every frame of the standing idle: a thigh's capsule overlaps the opposite hip bone even at rest. The check now counts only overlap beyond the rest pose within one body; between bodies any overlap counts. No limit was loosened to pass: the poses were changed (crouch, prone, hang, dive, held, caged, riding, lying heights, run lift). | scripts/check_clips.py, style-lab game_clips.py | done |
+| E4 | finding | Baked textures line up with the decimated mesh. | Decimating the mule across its UV seams made black patches; the mule is not decimated (7,352 triangles). | style-lab bake_game.py | done |
+| E5 | finding | The skinned pass can share the canvas freely. | Gate Crasher's renderer binds its vertex array once; the skinned pass left another bound and the world vanished. `skin.js` restores the state it found. | web/skin.js | done |
+| E6 | divergence | The uniform changes how Big Chum looks. | Her suit is the baked woodland camouflage whatever uniform is chosen; the uniform still sets the camo index (the rule). Recolouring the suit per uniform is left for a later round. | game.rs | person |
+| E7 | divergence | The mule has a mane and a tail tuft in game. | Particle hair does not survive the bake; in game the mule has his coat texture, bandana and saddlebags but no mane or tail hair, and his blanket came out empty. | style-lab bake_game.py | person |
+| E8 | divergence | Faces animate in game. | The baked clips carry bones only; the 52 face shapes stay in the Blender files. In game, faces hold still. | bake_game.py | person |
+| E9 | finding | Break each new behaviour test once. | `a_full_stride_plays_the_gait_clip_once` failed (left 32768) with the clip length dropped from the frame rule; the menu test failed listing four missions. Both pass restored. | actors.rs, game.rs | done |

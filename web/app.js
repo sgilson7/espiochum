@@ -4,14 +4,24 @@
 // out. The core says which screen the game is on; the page shows it.
 import init, { Game, numbers } from "./pkg/gatecrasher_shim.js";
 import { makeRenderer } from "./gl.js";
+import { makeSkin } from "./skin.js";
 import { makeInput } from "./input.js";
 import { makeHud } from "./hud.js";
 import { setup as setupSound, wake, toggleMute, play } from "./sound.js";
 
 const BUILD = "__BUILD__";
-const SAVE_KEY = "gatecrasher.save";
+const SAVE_KEY = "espiochum.save";
 const el = (id) => document.getElementById(id);
 const file = (path) => fetch(`${path}?v=${BUILD}`).then((r) => r.text());
+const files = {
+  json: (path) => file(path).then((t) => JSON.parse(t)),
+  binary: (path) => fetch(`${path}?v=${BUILD}`).then((r) => r.arrayBuffer()),
+  image: (path) => {
+    const img = new Image();
+    img.src = `${path}?v=${BUILD}`;
+    return img.decode().then(() => img);
+  },
+};
 
 // Browser storage can be missing or refused; the game works without it.
 const storage = {
@@ -63,9 +73,11 @@ function span(cls, text) {
 async function start() {
   const names = ["palette", "missions", "uniforms", "recruits", "talk", "copy", "controls", "sounds", "display"];
   const texts = await Promise.all(
-    names.map((n) => file(`data/${n}.json`)).concat([file("data/shaders/scene.vert"), file("data/shaders/scene.frag")]),
+    names.map((n) => file(`data/${n}.json`)).concat(
+      ["scene.vert", "scene.frag", "skin.vert", "skin.frag"].map((n) => file(`data/shaders/${n}`)),
+    ),
   );
-  const [palette, missions, uniforms, recruits, talk, copyText, controlsText, soundsText, displayText, vertex, fragment] = texts;
+  const [palette, missions, uniforms, recruits, talk, copyText, controlsText, soundsText, displayText, vertex, fragment, skinVertex, skinFragment] = texts;
   const copy = JSON.parse(copyText);
   const display = JSON.parse(displayText);
   fillCopy(copy);
@@ -90,6 +102,15 @@ async function start() {
     el("message").textContent = String(e);
   }
   if (!renderer) el("message").textContent = el("message").textContent || copy.no_webgl;
+  // the cast: skinned meshes on the same canvas (skin.js)
+  let skin = null;
+  if (renderer) {
+    try {
+      skin = await makeSkin(canvas.getContext("webgl2"), N, { vertex: skinVertex, fragment: skinFragment }, files, new Float32Array(display.look));
+    } catch (e) {
+      el("message").textContent = String(e);
+    }
+  }
   const save = () => storage.save(game.saved());
   const input = makeInput(canvas, JSON.parse(controlsText), N.actions, () => wake());
   const hud = makeHud(copy, display);
@@ -276,13 +297,16 @@ async function start() {
     if (renderer) {
       if (!uniformsSet) {
         renderer.setUniforms(game.uniforms(), game.clear_color());
+        if (skin) skin.setUniforms(game.uniforms());
         uniformsSet = true;
       }
       if (game.scenery_version() !== sceneryVersion) {
         sceneryVersion = game.scenery_version();
         renderer.setScenery(game.scenery());
       }
-      renderer.frame(game.mats(), game.draws(), game.dynamic());
+      const mats = game.mats();
+      renderer.frame(mats, game.draws(), game.dynamic());
+      if (skin) skin.draw(mats, game.actors());
     }
     requestAnimationFrame(frame);
   }

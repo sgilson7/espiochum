@@ -1,17 +1,8 @@
-# Gatecrasher
+# Espiochum
 
-A third-person stealth game that runs in the browser. You are Big Chum, a legendary soldier every soldier on the island dreams of serving with. You infiltrate one quarter of a walled island outpost, the same zone in every mission, with a silenced pistol, a portal gun and a mule. Soldiers see and hear you the way they do in Metal Gear Solid V, and one bullet kills you. Each mission tells you only what to do; where and who you find out by interrogating the soldiers. Every mission ends when you escape to the landing zone.
+A third-person stealth game that runs in the browser: the first mission of Gate Crasher, Caged Bird, rebuilt in a realistic style. You are Big Chum, a legendary soldier, with a silenced pistol, a portal gun and the Memphis Mule. Somewhere in a walled island outpost the soldiers hold Corporal Grace, and nobody will say where until you make someone talk. Free him and get out to the landing zone. Soldiers see and hear you the way they do in Metal Gear Solid V, and one bullet kills you.
 
-**Play:** https://sgilson7.github.io/gatecrasher/
-
-## The missions
-
-- **Caged Bird.** Rescue Corporal Grace. Nobody says where he is held until you make someone talk.
-- **Red Beret.** Eliminate Colonel Varga, one of three officers in red berets. Find out which one he is.
-- **Gate Lens.** Recover a black case from somewhere on the site. More of the elite soldiers are out, and their lenses can see your portals.
-- **Deterrence.** The outpost's Deterrence Unit, an unpiloted walking weapons platform 15 m to its deck, stands in the middle of the yard. Climb it tier by tier and set four charges (both knees, the reactor at the back of the deck, the cockpit roof) while its deck crew and a dozen guards watch. Get at least 70 m clear, set them off, then hold out until the helicopter lands at the west landing zone (75 s). The blast throws everyone near it down and sends the whole base out hunting, though nobody knows where you are.
-
-Each mission has its own soldiers, routes, start, landing zone and intel. Soldiers do not come back within a mission.
+**Play:** https://sgilson7.github.io/espiochum/
 
 ## What you can do
 
@@ -32,20 +23,20 @@ Press I for the intel you have, Esc to pause, N for sound.
 
 ## How it is built
 
-Gatecrasher is a [Builder](https://github.com/sgilson7/builder-setting) project, built from Pursuer's engine (Q16.16 fixed-point maths with no floats in the core, instanced WebGL 2 draws, an inverted-hull ink outline, banded light) and the TikZ art pipeline after `Sam_Comm_final.png` used across Sam's games.
+Espiochum is a [Builder](https://github.com/sgilson7/builder-setting) project. Its rules are Gate Crasher's, ported at commit e5e12de (MIT, the same author): a Rust core in Q16.16 fixed point with no floats, clocks or input and output (`crates/core`), a WebAssembly shim that decides nothing (`crates/shim`), and a static WebGL 2 page that draws what the core returns (`web/`).
 
-- **`crates/core`** holds every rule: the zone (`world.rs`), the soldiers' navigation grid and A* (`nav.rs`), sight, hearing and behaviour (`soldier.rs`), the operative and the camo index (`player.rs`), portals (`portal.rs`), the missions (`mission.rs`), and everything else in `game.rs`. No input or output, no floats, no clock. Every feel number is in `balance.rs`.
-- **`crates/shim`** moves values across the WebAssembly boundary and decides nothing.
-- **`web/`** is a static page with a WebGL 2 canvas. It draws what the core returns.
-- **`data/`** holds the missions, uniforms, recruit names, colours, words, sound recipes and shaders.
-- **`tools/art.py`** draws every menu picture as TikZ; the sources are in `tools/art/`.
+What is new in Espiochum:
+
+- **The cast** (Big Chum, the soldiers, Corporal Grace, the Memphis Mule) are skinned meshes built and animated by script in Blender, from CC0 MakeHuman assets, by the Style Lab pipeline (`style-lab/tools/mesh/`: `build.py`, `skin.py`, `gear.py`, `mule.py`, `game_clips.py`, `bake_game.py`). The bake writes each model to `web/mesh/` with a manifest in `data/mesh/`, and every clip as bone matrices the shader reads from a texture.
+- **The core chooses the animation** (`crates/core/src/actors.rs`): one record per person with the clip, the frame and the model matrix. Gaits loop over exactly one stride, so the core picks the frame from its stride counter and feet keep pace with the ground.
+- **Nothing clips** (`scripts/check_clips.py`): every frame of every clip is rebuilt as bone capsules from the baked files and measured for bodies through bodies (a held soldier, a body on a shoulder or on the mule), limbs through the torso, and anything below the ground. `tests/clip_defect.py` plants two defects and requires the check to fail on both. Both run in `./scripts/check.sh`.
+- **The world's look**: Gate Crasher's collision boxes, drawn with weathered materials (stained concrete, rusting corrugated metal, timber, patchy ground) under a low sun, a sky fill and haze (`data/shaders/scene.frag`), so what is drawn is what collides.
+- **One mission on offer**: the other three stay in the rules and their tests, off the menu (`offered` in `data/missions.json`).
 
 ```bash
 ./scripts/setup.sh   # once: Playwright and three browser engines
-./scripts/check.sh   # fmt, clippy, the core tests, the wasm build and audit, the browser check
+./scripts/check.sh   # fmt, clippy, the core tests, the wasm build and audit, the clip check, the browser check
 python3 scripts/serve.py 8000
 ```
 
 A push to `main` runs the same check in Chromium and deploys `dist/` to GitHub Pages if it passes.
-
-`BRIEF.md` holds the request word for word, `PLAN.md` the decisions, `SECOND-ORDER.md` what was found while building, and `HANDOFF.md` where the work stands.

@@ -6,6 +6,7 @@
 //! allowlist and the reference ban on floats, hash maps and clocks.
 #![allow(clippy::needless_range_loop, clippy::collapsible_match)]
 
+pub mod actors;
 pub mod balance;
 pub mod content;
 pub mod draw;

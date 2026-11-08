@@ -1,11 +1,11 @@
 {
   "_about": "Every word the page shows that is not mission text (missions.json) or a uniform's name (uniforms.json). Keys named in the core's HUD (prompts, toasts with @, said_key) are looked up here.",
-  "title": "Gatecrasher",
+  "title": "Espiochum",
   "subtitle": "A third-person stealth game. You are Big Chum, the legendary soldier every soldier on the island dreams of serving with. One outpost, two portals, one silenced pistol, and the Memphis Mule.",
   "missions_heading": "Missions",
   "graceland_button": "Graceland",
   "controls_heading": "Controls",
-  "credit": "Art drawn in TikZ. Sound synthesized in the browser. The page loads only its own files.",
+  "credit": "Characters and buildings built and rendered from scripts in Blender, from CC0 MakeHuman assets. Sound synthesized in the browser. The page loads only its own files.",
   "no_webgl": "This browser has no WebGL 2, so the game cannot draw. Try a current Chrome, Firefox or Safari.",
   "best_rank": "Best",
   "not_played": "Not yet played",
@@ -13,7 +13,13 @@
   "objective_label": "Objective",
   "uniform_heading": "Uniform",
   "uniform_note": "How well each uniform blends into each ground, in camo index points. Change uniform in the field with U.",
-  "grounds": ["Grass", "Dirt", "Concrete", "Indoors", "Sand"],
+  "grounds": [
+    "Grass",
+    "Dirt",
+    "Concrete",
+    "Indoors",
+    "Sand"
+  ],
   "deploy": "Deploy",
   "back": "Back",
   "click_to_play": "Click to take control",
@@ -138,29 +144,101 @@
   "fulton_none": "Out of fulton balloons.",
   "unit_m": "m",
   "controls": [
-    ["W A S D", "Move"],
-    ["Mouse", "Look"],
-    ["Shift", "Sprint"],
-    ["C", "Crouch / stand (crouch-walking is silent); let go of a ledge"],
-    ["Z", "Prone / crouch"],
-    ["Space", "Vault (over low things on the move), leap and hang from a ledge, climb up; dive (sprinting, knocks a soldier down); stand up"],
-    ["Right mouse", "Aim (hold on a soldier to mark him; close up, he puts his hands up)"],
-    ["Left mouse", "Fire"],
-    ["T", "Tranquilliser or lethal rounds"],
-    ["Q / R", "Blue / orange portal"],
-    ["X", "Close portals"],
-    ["F", "CQC: grab from behind, or disarm and throw from the front"],
-    ["E", "Use: pick up, put down, lockers, cage, case, charges, detonator; interrogate (in a hold, held up, pinned at gunpoint, or on the mule)"],
-    ["G", "Fulton extraction"],
-    ["H", "Whistle for the mule"],
-    ["M", "Mule: ram the soldier you point at"],
-    ["Y", "Put a downed soldier, or Grace, on the mule; or take him off"],
-    ["J", "Ride the mule, or get down (fast, but very noticeable)"],
-    ["V", "Active camo"],
-    ["B", "Cardboard box"],
-    ["U", "Change uniform"],
-    ["I", "Intel"],
-    ["N", "Sound on / off"],
-    ["Esc", "Pause"]
+    [
+      "W A S D",
+      "Move"
+    ],
+    [
+      "Mouse",
+      "Look"
+    ],
+    [
+      "Shift",
+      "Sprint"
+    ],
+    [
+      "C",
+      "Crouch / stand (crouch-walking is silent); let go of a ledge"
+    ],
+    [
+      "Z",
+      "Prone / crouch"
+    ],
+    [
+      "Space",
+      "Vault (over low things on the move), leap and hang from a ledge, climb up; dive (sprinting, knocks a soldier down); stand up"
+    ],
+    [
+      "Right mouse",
+      "Aim (hold on a soldier to mark him; close up, he puts his hands up)"
+    ],
+    [
+      "Left mouse",
+      "Fire"
+    ],
+    [
+      "T",
+      "Tranquilliser or lethal rounds"
+    ],
+    [
+      "Q / R",
+      "Blue / orange portal"
+    ],
+    [
+      "X",
+      "Close portals"
+    ],
+    [
+      "F",
+      "CQC: grab from behind, or disarm and throw from the front"
+    ],
+    [
+      "E",
+      "Use: pick up, put down, lockers, cage, case, charges, detonator; interrogate (in a hold, held up, pinned at gunpoint, or on the mule)"
+    ],
+    [
+      "G",
+      "Fulton extraction"
+    ],
+    [
+      "H",
+      "Whistle for the mule"
+    ],
+    [
+      "M",
+      "Mule: ram the soldier you point at"
+    ],
+    [
+      "Y",
+      "Put a downed soldier, or Grace, on the mule; or take him off"
+    ],
+    [
+      "J",
+      "Ride the mule, or get down (fast, but very noticeable)"
+    ],
+    [
+      "V",
+      "Active camo"
+    ],
+    [
+      "B",
+      "Cardboard box"
+    ],
+    [
+      "U",
+      "Change uniform"
+    ],
+    [
+      "I",
+      "Intel"
+    ],
+    [
+      "N",
+      "Sound on / off"
+    ],
+    [
+      "Esc",
+      "Pause"
+    ]
   ]
 }

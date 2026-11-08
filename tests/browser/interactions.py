@@ -44,7 +44,8 @@ def run(page, check, engine):
     check(mode(page) == "title", f"the game opens on the title ({mode(page)})")
     check(page.text_content("#title h1") == COPY["title"], "the title from data/copy.json is drawn")
     names = page.eval_on_selector_all("#mission-list .name", "els => els.map(e => e.textContent)")
-    check(names == [m["name"] for m in MISSIONS], f"the three missions are listed: {names}")
+    offered = [m["name"] for m in MISSIONS if m.get("offered", True)]
+    check(names == offered, f"the offered mission is listed, and only it: {names}")
 
     click(page, "#mission-list button:nth-child(1)")
     check(mode(page) == "brief", f"choosing a mission opens its briefing ({mode(page)})")
@@ -99,5 +100,6 @@ def run(page, check, engine):
 
     page.reload()
     page.wait_for_selector("body[data-ready='true']", state="attached", timeout=20000)
-    click(page, "#mission-list button:nth-child(2)")
+    # Espiochum offers one mission: the uniform must still be kept on it after a reload
+    click(page, "#mission-list button:nth-child(1)")
     check("on" in (page.get_attribute("#uniforms tr:nth-child(3)", "class") or ""), "the uniform was kept after a reload")

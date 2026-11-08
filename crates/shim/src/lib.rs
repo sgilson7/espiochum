@@ -70,6 +70,11 @@ impl Game {
         self.inner.draws()
     }
 
+    /// One record per person and the mule (crates/core/src/actors.rs), as floats.
+    pub fn actors(&self) -> Vec<f32> {
+        floats(self.inner.actors())
+    }
+
     pub fn mats(&self) -> Vec<f32> {
         floats(self.inner.mats())
     }

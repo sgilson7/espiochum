@@ -1,7 +1,8 @@
 #version 300 es
 precision highp float;
-// Passes (the core says which): 0 solid, lit in flat bands like the
-// TikZ art's fills; 1 ink, the plum outline; 2 tint, see-through shapes
+// Passes (the core says which): 0 solid, lit in Espiochum's style: a low
+// sun with continuous shading, a sky fill and a ground bounce, weathered
+// materials, haze; 1 ink (zero width in this style); 2 tint, see-through shapes
 // (sight cones, the landing zone's glow); 4 a portal's window cleared to
 // the sky (3 and 5 write no colour).
 // Styles (crates/core/src/world.rs): 0 plain, 1 concrete panels,
@@ -39,6 +40,28 @@ float blotch(vec3 p) {
   return mix(a, b, f.y);
 }
 
+float vnoise(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = mix(hash(i.xy + i.z * 17.0), hash(i.xy + vec2(1.0, 0.0) + i.z * 17.0), f.x);
+  float b = mix(hash(i.xy + vec2(0.0, 1.0) + i.z * 17.0), hash(i.xy + vec2(1.0, 1.0) + i.z * 17.0), f.x);
+  float c = mix(hash(i.xy + (i.z + 1.0) * 17.0), hash(i.xy + vec2(1.0, 0.0) + (i.z + 1.0) * 17.0), f.x);
+  float d = mix(hash(i.xy + vec2(0.0, 1.0) + (i.z + 1.0) * 17.0), hash(i.xy + vec2(1.0, 1.0) + (i.z + 1.0) * 17.0), f.x);
+  return mix(mix(a, b, f.y), mix(c, d, f.y), f.z);
+}
+
+float fbm(vec3 p) {
+  float s = 0.0;
+  float w = 0.5;
+  for (int k = 0; k < 4; k++) {
+    s += w * vnoise(p);
+    p *= 2.03;
+    w *= 0.5;
+  }
+  return s;
+}
+
 void main() {
   if (dot(uClip.xyz, vWorld) < uClip.w) discard;
   float d = length(vWorld - uEye);
@@ -64,33 +87,43 @@ void main() {
     return;
   }
   vec3 n = normalize(vNormal);
-  vec3 base = vColor.rgb;
+  vec3 base = pow(vColor.rgb, vec3(2.2));
   vec3 ln = vLocalNormal;
   bool side = abs(ln.y) < 0.5;
   float u = abs(ln.x) > abs(ln.z) ? (vLocal.z + 0.5) * vSize.z : (vLocal.x + 0.5) * vSize.x;
   float v = (vLocal.y + 0.5) * vSize.y;
-  if (style > 0.5 && style < 1.5 && side) {
-    // concrete panels: a seam every 3 m and a line at 1.2 m
-    if (fract(u / 3.0) < 0.02 || abs(v - 1.2) < 0.03) base *= 0.82;
-  }
-  if (style > 1.5 && style < 2.5 && side) {
-    // corrugated sheet: vertical ribs
-    base *= 0.9 + 0.1 * step(0.5, fract(u * 3.0));
-  }
-  if (style > 2.5 && style < 3.5) {
-    // camouflage: dark blotches over the base colour
+  float h = vWorld.y;
+  // weathering shared by every built surface: broad stains, fine grain, and
+  // dirt that climbs the bottom of walls
+  float broad = fbm(vWorld * 0.35);
+  float fine = fbm(vWorld * 6.0);
+  float grime = side ? (1.0 - smoothstep(0.0, 1.4, v)) * 0.35 : 0.0;
+  if (style > 0.5 && style < 1.5) {
+    // concrete panels: seams every 3 m, water stains running down
+    if (side && (fract(u / 3.0) < 0.012 || abs(v - 1.2) < 0.02)) base *= 0.7;
+    float streak = side ? smoothstep(0.55, 0.8, fbm(vec3(u * 2.2, v * 0.25, 0.0))) : 0.0;
+    base *= (0.82 + 0.3 * broad) * (0.92 + 0.12 * fine) * (1.0 - 0.25 * streak);
+  } else if (style > 1.5 && style < 2.5) {
+    // corrugated sheet: ribs that catch the light, rust running from the top
+    float rib = sin(u * 6.2831 * 4.0);
+    n = normalize(n + (side ? 0.25 * rib : 0.0) * normalize(cross(n, vec3(0.0, 1.0, 0.0)) + 1e-4));
+    float rust = side ? smoothstep(0.6, 0.85, fbm(vec3(u * 3.0, v * 0.18 + 7.0, 1.0))) * smoothstep(0.0, 2.5, v) : 0.0;
+    base = mix(base * (0.85 + 0.25 * broad), vec3(0.24, 0.12, 0.06), rust * 0.6);
+  } else if (style > 2.5 && style < 3.5) {
     float b = blotch(vWorld * 1.0);
-    if (b > 0.55) base *= 0.6;
-    else if (b < 0.25) base *= 1.12;
+    if (b > 0.55) base *= 0.5;
+    else if (b < 0.25) base *= 1.15;
+  } else if (style > 4.5 && style < 5.5) {
+    // timber: boards and grain
+    if (side && fract(v / 0.3) < 0.06) base *= 0.6;
+    base *= 0.8 + 0.3 * fbm(vec3(u * 0.5, v * 12.0, 3.0));
+  } else if (style > 5.5 && style < 6.5) {
+    // ground: patches at several scales
+    base *= 0.72 + 0.32 * broad + 0.16 * fine + 0.1 * fbm(vWorld * 1.7);
+  } else {
+    base *= 0.9 + 0.15 * broad;
   }
-  if (style > 4.5 && style < 5.5 && side) {
-    // planks
-    if (fract(v / 0.3) < 0.08) base *= 0.75;
-  }
-  if (style > 5.5 && style < 6.5) {
-    float g = hash(floor(vWorld.xz * 1.5));
-    base *= 0.95 + 0.07 * g;
-  }
+  base *= 1.0 - grime;
   if (style > 7.5) {
     // the portal: rings that brighten toward the rim
     float r = length(vLocal.xz) * 2.0;
@@ -102,10 +135,12 @@ void main() {
     outColor = vec4(mix(base * 1.15, uFog, f * 0.6), 1.0);
     return;
   }
-  float diffuse = dot(n, uLightDir);
-  float band = diffuse > 0.55 ? 1.0 : (diffuse > 0.1 ? 0.78 : 0.58);
-  float sky = 0.5 + 0.5 * n.y;
-  vec3 ambient = mix(uFog * 0.55, uSky * 0.8, sky);
-  vec3 lit = base * (ambient * 0.62 + uLight * band * 0.55);
-  outColor = vec4(mix(lit, uFog, f), 1.0);
+  float sun = max(dot(n, uLightDir), 0.0);
+  float up = 0.5 + 0.5 * n.y;
+  vec3 sky = pow(uSky, vec3(2.2));
+  vec3 sunCol = pow(uLight, vec3(2.2));
+  vec3 lit = base * (sunCol * sun * 1.05 + sky * 0.5 * up + sunCol * 0.14 * (1.0 - up));
+  vec3 fog = pow(uFog, vec3(2.2));
+  vec3 col = mix(lit, fog, f);
+  outColor = vec4(pow(col, vec3(1.0 / 2.2)), 1.0);
 }
