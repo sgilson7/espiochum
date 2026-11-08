@@ -4,7 +4,7 @@ Espiochum, 2026-11-07. Gate Crasher's first mission rebuilt in the new realistic
 
 ## What this is
 
-A third-person stealth game in the browser: Caged Bird, Gate Crasher's first mission, with Big Chum, the soldiers, Corporal Grace and the Memphis Mule as skinned, animated meshes, the outpost under weathered materials and a low sun, and the same rules. Live at https://sgilson7.github.io/espiochum/ (repository sgilson7/espiochum; a push to `main` checks and deploys).
+A third-person stealth game in the browser: Caged Bird, Gate Crasher's first mission, with Big Chum, the soldiers, Corporal Grace and the Memphis Mule as skinned, animated meshes, the outpost under weathered materials and a low sun, and the same rules. Live at https://sgilson7.github.io/espiochum/ (repository sgilson7/espiochum; a push to `main` checks and deploys). First live deploy: commit a0e176a, 2026-11-07; the browser check passed against the live address in Chromium.
 
 ## What passed
 
@@ -28,6 +28,7 @@ A third-person stealth game in the browser: Caged Bird, Gate Crasher's first mis
 - E6: the uniform no longer recolours Big Chum's suit (the rule still applies).
 - E7: the mule has no mane or tail hair in game, and his blanket is missing.
 - E8: faces hold still in game; the face shapes are in the Blender files only.
+- E10: people past 70 m from the camera are not drawn.
 - The other three missions and the Deterrence Unit are in the rules but off the menu.
 
 ## What will bite within the hour
